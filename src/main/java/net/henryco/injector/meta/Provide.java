@@ -11,4 +11,8 @@ import java.lang.annotation.*;
 @Documented @Target(ElementType.METHOD)
 public @interface Provide {
 
+	/**
+	 * Name of provided component
+	 */
+	String value();
 }

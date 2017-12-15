@@ -1,19 +1,16 @@
 package net.henryco.injector;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public final class Provider {
+
 	private static Provider ourInstance = new Provider();
-	public static Provider getInstance() {
+	public static Provider get() {
 		return ourInstance;
 	}
 
-	private final Map<Class<?>, Map<String, Object>> singletonsMap;
-
+	private final Container container;
 
 	private Provider() {
-		singletonsMap = new HashMap<>();
+		container = new Container();
 	}
 
 
@@ -29,16 +26,17 @@ public final class Provider {
 
 	}
 
+
 	public void addReceivers(Class<?> ... receivers) {
-		for (Class<?> receiver : receivers) {
-			// TODO
-		}
+		container.addReceivers(receivers);
 	}
 
 	public void addModules(Class<?> ... modules) {
-		for (Class<?> module : modules) {
-			// TODO
-		}
+		container.addModules(modules);
+	}
+
+	public void addComponents(Class<?> ... components) {
+		container.addComponents(components);
 	}
 
 }
