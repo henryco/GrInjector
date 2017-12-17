@@ -1,4 +1,4 @@
-package net.henryco.injector.reflect;
+package net.henryco.injector.helper;
 
 import net.henryco.injector.meta.Helper;
 import org.junit.Test;
@@ -6,11 +6,18 @@ import org.junit.Test;
 /**
  * @author Henry on 17/12/17.
  */
-public class ReflectionTest {
+public class HelperTest {
 
 	interface InterfaceA { }
 	interface InterfaceB extends InterfaceA { }
-	static class ClassA { }
+	static class ClassA {
+		private String text;
+		private String numb;
+
+		public void setNumb(String numb) {
+			this.numb = numb;
+		}
+	}
 	static class ClassB extends ClassA implements InterfaceB { }
 	private static class ClassC extends ClassB { }
 
@@ -32,8 +39,26 @@ public class ReflectionTest {
 	}
 
 
+	@Test
+	public void setterNameTest() {
+
+		assert Helper.createSetterName("someValue").equals("setSomeValue");
+		assert Helper.createSetterName("abc").equals("setAbc");
+		assert Helper.createSetterName("tetris").equals("setTetris");
+	}
 
 
+
+
+	@Test
+	public void setValueTest() throws NoSuchFieldException {
+
+		ClassA a = new ClassA();
+		Helper.setValue(ClassA.class.getDeclaredField("text"), a, "Some Text");
+		Helper.setValue(ClassA.class.getDeclaredField("numb"), a, "NUMBER");
+		assert a.text.equals("Some Text");
+		assert a.numb.equals("NUMBER");
+	}
 
 
 }

@@ -1,5 +1,9 @@
 package net.henryco.injector.meta;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 /**
  * @author Henry on 17/12/17.
  */
@@ -41,4 +45,46 @@ public final class Helper {
 		}
 		return false;
 	}
+
+
+	public static String createSetterName(String name) {
+		char[] chars = name.toCharArray();
+		chars[0] = new String(new char[]{chars[0]}).toUpperCase().charAt(0);
+		return "set" + new String(chars);
+	}
+
+
+	public static void setValues(Object instance, Field[] fields, Object[] values) {
+		for (int i = 0; i < fields.length; i++)
+			setValue(fields[i], instance, values[i]);
+	}
+
+	public static void setValue(Field field, Object instance, Object value) {
+
+		String name = createSetterName(field.getName());
+		try {
+			Method setter = instance.getClass().getDeclaredMethod(name);
+			//noinspection JavaReflectionInvocation
+			setter.invoke(instance, value);
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			try {
+				field.set(instance, value);
+			} catch (IllegalAccessException e1) {
+				field.setAccessible(true);
+				try {
+					field.set(instance, value);
+				} catch (IllegalAccessException e2) {
+					e2.printStackTrace();
+					throw new RuntimeException("Cannot inject value: "
+							+ instance.getClass() + " : "
+							+ field.getName() + " : "
+							+ value
+					);
+				}
+			}
+		}
+	}
+
+
+
 }

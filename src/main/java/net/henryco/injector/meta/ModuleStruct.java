@@ -5,10 +5,7 @@ import net.henryco.injector.meta.annotations.Inject;
 import net.henryco.injector.meta.annotations.Module;
 import net.henryco.injector.meta.annotations.Provide;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -158,35 +155,7 @@ public final class ModuleStruct {
 						continue;
 				}
 
-				Constructor<?>[] constructors = component.getDeclaredConstructors();
-				if (constructors.length == 0)
-					throw new RuntimeException("Component must have at least one constructor");
-
-				Constructor<?> constructor = null;
-
-				for (Constructor<?> c : constructors) {
-					Inject ia = c.getAnnotation(Inject.class);
-					if (ia != null) {
-						if (constructor != null)
-							throw new RuntimeException("Only once constructor can possess @Inject annotation");
-						constructor = c;
-					}
-				}
-
-				if (constructor == null)
-					constructor = constructors[0];
-
-				Parameter[] parameters = constructor.getParameters();
-				Object[] arguments = instanceDependencyArguments(parameters, struct);
-
-				try {
-					return (T) constructor.newInstance(arguments);
-				} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-					e.printStackTrace();
-					throw new RuntimeException("Cannot instance via constructor", e);
-				}
-
-
+				return instanceDependencyFromConstructor(component, struct);
 			}
 		}
 
@@ -292,6 +261,48 @@ public final class ModuleStruct {
 
 
 	@SuppressWarnings("unchecked")
+	private static <T> T instanceDependencyFromConstructor(Class<?> component, ModuleStruct struct) {
+
+		Constructor<?>[] constructors = component.getDeclaredConstructors();
+		if (constructors.length == 0)
+			throw new RuntimeException("Component must have at least one constructor");
+
+		Constructor<?> constructor = null;
+
+		for (Constructor<?> c : constructors) {
+			Inject ia = c.getAnnotation(Inject.class);
+			if (ia != null) {
+				if (constructor != null)
+					throw new RuntimeException("Only once constructor can possess @Inject annotation");
+				constructor = c;
+			}
+		}
+
+		if (constructor == null)
+			constructor = constructors[0];
+
+		Parameter[] parameters = constructor.getParameters();
+		Object[] arguments = instanceDependencyArguments(parameters, struct);
+
+		T instance;
+
+		try {
+			instance = (T) constructor.newInstance(arguments);
+		} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Cannot instance via constructor", e);
+		}
+
+		Field[] fields = component.getDeclaredFields();
+		Object[] fieldValues = instanceDependencyFields(fields, struct);
+		Helper.setValues(instance, fields, fieldValues);
+
+		return instance;
+	}
+
+
+
+	@SuppressWarnings("unchecked")
 	private static <T> T instanceDependencyFromMethod
 			(Object moduleInstance, ModuleStruct struct, Method method) {
 
@@ -311,6 +322,27 @@ public final class ModuleStruct {
 		}
 
 		return null;
+	}
+
+
+	private static Object[] instanceDependencyFields(Field[] fields, ModuleStruct struct) {
+
+		Object[] fieldValues = new Object[fields.length];
+		for (int i = 0; i < fields.length; i++) {
+
+			Inject inject = fields[i].getDeclaredAnnotation(Inject.class);
+			if (inject == null) {
+				fieldValues[i] = null;
+				continue;
+			}
+
+			if (inject.value().trim().isEmpty())
+				fieldValues[i] = findOrInstanceByType(fields[i].getType(), struct);
+			else
+				fieldValues[i] = findOrInstanceByName(inject.value(), struct);
+		}
+
+		return fieldValues;
 	}
 
 
