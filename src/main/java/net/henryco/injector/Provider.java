@@ -15,7 +15,9 @@ public final class Provider {
 
 
 	public void inject() {
+		for (Class<?> target : container.targets) {
 
+		}
 	}
 
 	public void inject(Object dest) {
@@ -30,4 +32,7 @@ public final class Provider {
 		container.addModules(modules);
 	}
 
+	public void addTargets(Class<?> ... targets) {
+		container.addTargets(targets);
+	}
 }
