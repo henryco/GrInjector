@@ -5,12 +5,16 @@ import net.henryco.injector.meta.annotations.Inject;
 import net.henryco.injector.meta.annotations.Provide;
 
 import java.lang.reflect.*;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
  * @author Henry on 17/12/17.
  */
 public class Injector {
+
+	private static final class NULL_MARKER { }
+	private static final NULL_MARKER NULL = new NULL_MARKER();
 
 
 	@SuppressWarnings("unchecked")
@@ -224,8 +228,11 @@ public class Injector {
 		}
 
 		Field[] fields = component.getDeclaredFields();
-		Object[] fieldValues = instanceDependencyFields(fields, struct);
-		Helper.setValues(instance, fields, fieldValues);
+		Object[] fieldValues = instanceDependencyFields(fields, component, struct);
+		for (int i = 0; i < fields.length; i++) {
+			if (fieldValues[i] == NULL) continue;
+			Helper.setValue(fields[i], instance, fieldValues[i]);
+		}
 
 		return instance;
 	}
@@ -255,15 +262,26 @@ public class Injector {
 	}
 
 
-	private static Object[] instanceDependencyFields(Field[] fields, ModuleStruct struct) {
+	private static Object[] instanceDependencyFields(Field[] fields, Class<?> instance, ModuleStruct struct) {
 
 		Object[] fieldValues = new Object[fields.length];
 		for (int i = 0; i < fields.length; i++) {
 
 			Inject inject = fields[i].getDeclaredAnnotation(Inject.class);
 			if (inject == null) {
-				fieldValues[i] = null;
-				continue;
+
+				try {
+					String setterName = Helper.createSetterName(fields[i].getName());
+					Method declaredMethod = instance.getDeclaredMethod(setterName, fields[i].getType());
+					inject = declaredMethod.getDeclaredAnnotation(Inject.class);
+				} catch (NoSuchMethodException e) {
+					inject = null;
+				}
+
+				if (inject == null) {
+					fieldValues[i] = NULL;
+					continue;
+				}
 			}
 
 			if (inject.value().trim().isEmpty())

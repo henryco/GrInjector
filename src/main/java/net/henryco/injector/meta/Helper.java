@@ -61,10 +61,10 @@ public final class Helper {
 
 	public static void setValue(Field field, Object instance, Object value) {
 
+
 		String name = createSetterName(field.getName());
 		try {
-			Method setter = instance.getClass().getDeclaredMethod(name);
-			//noinspection JavaReflectionInvocation
+			Method setter = instance.getClass().getDeclaredMethod(name, value.getClass());
 			setter.invoke(instance, value);
 		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 			try {
