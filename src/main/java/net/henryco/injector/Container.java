@@ -1,6 +1,7 @@
 package net.henryco.injector;
 
-import net.henryco.injector.meta.Component;
+import net.henryco.injector.meta.ModuleStruct;
+import net.henryco.injector.meta.annotations.Component;
 
 import java.util.*;
 

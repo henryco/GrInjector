@@ -1,4 +1,4 @@
-package net.henryco.injector.meta;
+package net.henryco.injector.meta.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

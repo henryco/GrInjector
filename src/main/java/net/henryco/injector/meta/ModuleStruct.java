@@ -1,9 +1,12 @@
-package net.henryco.injector;
+package net.henryco.injector.meta;
 
-import net.henryco.injector.meta.Inject;
-import net.henryco.injector.meta.Module;
-import net.henryco.injector.meta.Provide;
+import net.henryco.injector.meta.annotations.Component;
+import net.henryco.injector.meta.annotations.Inject;
+import net.henryco.injector.meta.annotations.Module;
+import net.henryco.injector.meta.annotations.Provide;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
@@ -16,8 +19,9 @@ import java.util.*;
 public final class ModuleStruct {
 
 	private final Class<?> module;
-	private final Set<ModuleStruct> included;
 	private final Map<String, Object> singletons;
+	private final Set<ModuleStruct> included;
+	private final Set<Class<?>> components;
 
 	public ModuleStruct(Class<?> module) {
 
@@ -27,23 +31,34 @@ public final class ModuleStruct {
 
 		this.module = module;
 		this.included = new HashSet<>();
+		this.components = new HashSet<>();
 		this.singletons = new HashMap<>();
 
-		processIncluded(ma);
+		addIncluded(ma);
+		addComponents(ma);
 		processSingletons();
 	}
 
 	private ModuleStruct(ModuleStruct other) {
 		this.module = null;
 		this.singletons = new HashMap<>();
+		this.components = new HashSet<>();
 		this.included = new HashSet<ModuleStruct>() {{
 			add(other);
 		}};
 	}
 
-	private void processIncluded(Module m) {
+	private void addIncluded(Module m) {
 		for (Class<?> icl : m.include())
 			included.add(new ModuleStruct(icl));
+	}
+
+	private void addComponents(Module m) {
+		for (Class<?> component : m.components()) {
+			Component c = component.getDeclaredAnnotation(Component.class);
+			if (c == null) throw new RuntimeException("Component must be annotated as @Component");
+			components.add(component);
+		}
 	}
 
 	private void processSingletons() {
@@ -86,6 +101,9 @@ public final class ModuleStruct {
 		T nested = findInNestedByType(type, struct);
 		if (nested != null) return nested;
 
+		T component = findInComponentsByType(type, struct);
+		if (component != null) return component;
+
 		return null;
 	}
 
@@ -102,8 +120,79 @@ public final class ModuleStruct {
 		T nested = findInNestedByName(name, struct);
 		if (nested != null) return nested;
 
+		T component = findInComponentsByName(name, struct);
+		if (component != null) return component;
+
 		return null;
 	}
+
+
+	private static <T> T findInComponentsByName(String name, ModuleStruct struct) {
+		return findInComponents(name, null, struct);
+	}
+
+
+	private static <T> T findInComponentsByType(Class<?> type, ModuleStruct struct) {
+		return findInComponents(null, type, struct);
+	}
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T findInComponents(String name, Class<?> type, ModuleStruct struct) {
+
+		assertNameAndType(name, type);
+
+		for (ModuleStruct moduleStruct : struct.included) {
+			for (Class<?> component : moduleStruct.components) {
+
+				Component ca = component.getDeclaredAnnotation(Component.class);
+
+				if (name != null) {
+					String compName = ca.value();
+					if (compName.trim().isEmpty() || !compName.trim().equals(name))
+						continue;
+				}
+
+				if (type != null) {
+					if (!Helper.checkType(component, type))
+						continue;
+				}
+
+				Constructor<?>[] constructors = component.getDeclaredConstructors();
+				if (constructors.length == 0)
+					throw new RuntimeException("Component must have at least one constructor");
+
+				Constructor<?> constructor = null;
+
+				for (Constructor<?> c : constructors) {
+					Inject ia = c.getAnnotation(Inject.class);
+					if (ia != null) {
+						if (constructor != null)
+							throw new RuntimeException("Only once constructor can possess @Inject annotation");
+						constructor = c;
+					}
+				}
+
+				if (constructor == null)
+					constructor = constructors[0];
+
+				Parameter[] parameters = constructor.getParameters();
+				Object[] arguments = instanceDependencyArguments(parameters, struct);
+
+				try {
+					return (T) constructor.newInstance(arguments);
+				} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+					e.printStackTrace();
+					throw new RuntimeException("Cannot instance via constructor", e);
+				}
+
+
+			}
+		}
+
+		return null;
+	}
+
 
 
 	private static <T> T findInNestedByName(String name, ModuleStruct struct) {
@@ -165,11 +254,7 @@ public final class ModuleStruct {
 
 	private static <T> T findInMethods(String name, Class<?> type, ModuleStruct struct) {
 
-		if ((name != null && type != null))
-			throw new RuntimeException("Cannot find by NAME and TYPE in the same time!");
-		if (name == null && type == null)
-			throw new RuntimeException("NAME and TYPE cannot be NULL in the same time!");
-
+		assertNameAndType(name, type);
 
 		for (ModuleStruct moduleStruct : struct.included) {
 
@@ -181,8 +266,7 @@ public final class ModuleStruct {
 					continue;
 
 				if (name == null) {
-					Class<?> returnType = method.getReturnType();
-					if (!returnType.equals(type))
+					if (!Helper.checkType(method.getReturnType(), type))
 						continue;
 				}
 
@@ -218,8 +302,21 @@ public final class ModuleStruct {
 		}
 
 		Parameter[] parameters = method.getParameters();
-		Object[] args = new Object[parameters.length];
+		Object[] args = instanceDependencyArguments(parameters, struct);
 
+		try {
+			return (T) method.invoke(moduleInstance, args);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+
+	private static Object[] instanceDependencyArguments(Parameter[] parameters, ModuleStruct struct) {
+
+		Object[] args = new Object[parameters.length];
 		for (int i = 0; i < args.length; i++) {
 			Parameter param = parameters[i];
 
@@ -230,13 +327,15 @@ public final class ModuleStruct {
 				args[i] = findOrInstanceByType(param.getType(), struct);
 		}
 
-		try {
-			return (T) method.invoke(moduleInstance, args);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		return args;
+	}
 
-		return null;
+
+	private static void assertNameAndType(String name, Class<?> type) {
+		if ((name != null && type != null))
+			throw new RuntimeException("Cannot find by NAME and TYPE in the same time!");
+		if (name == null && type == null)
+			throw new RuntimeException("NAME and TYPE cannot be NULL in the same time!");
 	}
 
 
