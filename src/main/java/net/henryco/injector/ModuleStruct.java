@@ -63,50 +63,51 @@ public final class ModuleStruct {
 		return module == null ? null : (module.getSimpleName() + ".class");
 	}
 
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T findInSingletons(String name, ModuleStruct struct) {
+
+		System.out.println("\nSearch in singletons ");
+		for (ModuleStruct moduleStruct : struct.included) {
+
+			System.out.println("Module: " + moduleStruct.module.getSimpleName() + ".class");
+			Object o = moduleStruct.singletons.get(name);
+			if (o != null) {
+				System.out.println("Return\n");
+				return (T) moduleStruct.singletons.get(name);
+			}
+		}
+		return null;
+	}
+
+
+
 	@SuppressWarnings("unchecked")
 	private static <T> T findOrInstance(String name, ModuleStruct struct) {
 
-//		System.out.println("\n\n\n------");
-//		System.out.println("findOrInstance(name: " + name +", parent: "+struct+")");
 
-//		System.out.println("\nSearch in singletons ");
+		Object o = findInSingletons(name, struct);
+		if (o != null) return (T) o;
+
 		for (ModuleStruct moduleStruct : struct.included) {
-
-//			System.out.println("Module: " + moduleStruct.module.getSimpleName() + ".class");
-			Object o = moduleStruct.singletons.get(name);
-			if (o != null) {
-//				System.out.println("Return\n");
-				return (T) o;
-			}
-		}
-
-//		System.out.println("\nSearch in methods: ");
-		for (ModuleStruct moduleStruct : struct.included) {
-
-//			System.out.println("Module: " + moduleStruct.module.getSimpleName() + ".class");
 
 			Method[] methods = moduleStruct.module.getDeclaredMethods();
 			for (Method method : methods) {
-//				System.out.println("Method: " + method.getName());
 
 				Provide provide = method.getDeclaredAnnotation(Provide.class);
 				if (provide == null)
 					continue;
 
 
-//				System.out.println("Provide(name: "+provide.value()+")");
-
 
 				String compName = provide.value();
 				if (compName.trim().isEmpty() || !compName.trim().equals(name))
 					continue;
 
-//				System.out.println("CompName: " + compName);
 
 				if (method.getParameterCount() == 0) {
-//					System.out.println("Param count: 0");
 					try {
-//						System.out.println("Return\n");
 						return (T) method.invoke(moduleStruct.module.newInstance());
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -117,27 +118,17 @@ public final class ModuleStruct {
 				Parameter[] parameters = method.getParameters();
 				Object[] args = new Object[parameters.length];
 
-//				System.out.println("\nProcess method parameters");
 				for (int i = 0; i < args.length; i++) {
 					Parameter param = parameters[i];
 
-//					System.out.println("Param: " + param);
-
 					Inject inject = param.getAnnotation(Inject.class);
 					if (inject != null && !inject.value().trim().isEmpty()) {
-//						System.out.println("Param Inject(" + inject.value() + ")");
 						args[i] = findOrInstance(inject.value(), struct);
-						continue;
 					}
 
-//					System.out.println("Param name: " + param.getName());
-					args[i] = findOrInstance(param.getName(), struct);
 				}
 
 				try {
-//					System.out.println("\nDependency instance(name: " + name + ")");
-//					for (int k = 0; k < args.length; k++) System.out.println("Param["+k+"]: " + args[k]);
-//					System.out.println("Return\n");
 					return (T) method.invoke(moduleStruct.module.newInstance(), args);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -146,19 +137,14 @@ public final class ModuleStruct {
 			}
 		}
 
-//		System.out.println("\nSearch nested");
 		for (ModuleStruct moduleStruct : struct.included) {
 
-//			System.out.println("Module: " + moduleStruct.module.getSimpleName() + ".class");
 			Object o1 = findOrInstance(name, moduleStruct);
 			if (o1 != null) {
-//				System.out.println("Return\n");
 				return (T) o1;
 			}
 		}
 
-//		System.out.println("Return\n");
-//		System.out.println("------");
 		return null;
 	}
 
