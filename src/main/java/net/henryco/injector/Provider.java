@@ -26,17 +26,8 @@ public final class Provider {
 
 	}
 
-
-	public void addReceivers(Class<?> ... receivers) {
-		container.addReceivers(receivers);
-	}
-
 	public void addModules(Class<?> ... modules) {
 		container.addModules(modules);
-	}
-
-	public void addComponents(Class<?> ... components) {
-		container.addComponents(components);
 	}
 
 }

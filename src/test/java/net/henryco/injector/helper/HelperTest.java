@@ -1,7 +1,14 @@
 package net.henryco.injector.helper;
 
+import net.henryco.injector.injector.component.ComponentA;
+import net.henryco.injector.injector.component.ComponentB;
+import net.henryco.injector.injector.component.ComponentC;
+import net.henryco.injector.injector.component.ComponentD;
 import net.henryco.injector.meta.Helper;
+import net.henryco.injector.meta.ClassFinder;
 import org.junit.Test;
+
+import java.util.ArrayList;
 
 /**
  * @author Henry on 17/12/17.
@@ -61,4 +68,13 @@ public class HelperTest {
 	}
 
 
+	@Test
+	public void packageClassFinderTest() throws ClassNotFoundException {
+		String name = ComponentA.class.getPackage().getName();
+		ArrayList<Class<?>> list = ClassFinder.getClassesForPackage(name);
+		assert list.contains(ComponentA.class);
+		assert list.contains(ComponentB.class);
+		assert list.contains(ComponentC.class);
+		assert list.contains(ComponentD.class);
+	}
 }

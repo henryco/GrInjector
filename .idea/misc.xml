@@ -6,6 +6,9 @@
       <item index="1" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Module" />
       <item index="2" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Provide" />
     </list>
+    <writeAnnotations>
+      <writeAnnotation name="net.henryco.injector.meta.annotations.Inject" />
+    </writeAnnotations>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />

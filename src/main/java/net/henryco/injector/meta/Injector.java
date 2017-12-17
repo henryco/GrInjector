@@ -5,16 +5,18 @@ import net.henryco.injector.meta.annotations.Inject;
 import net.henryco.injector.meta.annotations.Provide;
 
 import java.lang.reflect.*;
-import java.util.Arrays;
 import java.util.Collection;
 
 /**
  * @author Henry on 17/12/17.
  */
-public class Injector {
+public final class Injector {
 
-	private static final class NULL_MARKER { }
-	private static final NULL_MARKER NULL = new NULL_MARKER();
+	private static final class NULL_MARKER {
+		private static final NULL_MARKER instance = new NULL_MARKER();
+		private NULL_MARKER() {}
+	}
+	private static final NULL_MARKER NULL = NULL_MARKER.instance;
 
 
 	@SuppressWarnings("unchecked")

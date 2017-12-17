@@ -15,5 +15,5 @@ public @interface Module {
 	Class<?>[] include() default {};
 	Class<?>[] components() default {};
 	Class<?>[] componentsRootClass() default {};
-	Class<?>[] componentsRootPath() default {};
+	String[] componentsRootPath() default {};
 }

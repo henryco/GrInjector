@@ -30,6 +30,7 @@ public final class ModuleStruct {
 
 		addIncluded(ma);
 		addComponents(ma);
+		addComponentsFromPackage(ma);
 		processSingletons();
 	}
 
@@ -57,7 +58,27 @@ public final class ModuleStruct {
 			if (c == null) throw new RuntimeException("Component must be annotated as @Component");
 			components.add(component);
 		}
+	}
 
+	private void addComponentsFromPackage(Module m) {
+		for (String path : m.componentsRootPath())
+			processPackagePath(path);
+		for (Class<?> cClass : m.componentsRootClass())
+			processPackagePath(cClass.getPackage().getName());
+	}
+
+	private void processPackagePath(String path) {
+
+		try {
+			ArrayList<Class<?>> classes = ClassFinder.getClassesForPackage(path);
+			for (Class<?> component : classes) {
+				Component c = component.getDeclaredAnnotation(Component.class);
+				if (c == null) continue;
+				components.add(component);
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 

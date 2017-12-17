@@ -37,5 +37,4 @@ public class InjectorTest {
 		assert componentB2 != null;
 		assert componentB2.toString().equals(valid);
 	}
-
 }
