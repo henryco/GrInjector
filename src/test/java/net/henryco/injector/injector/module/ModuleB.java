@@ -1,4 +1,4 @@
-package net.henryco.injector.provider.module;
+package net.henryco.injector.injector.module;
 
 import net.henryco.injector.meta.annotations.Module;
 

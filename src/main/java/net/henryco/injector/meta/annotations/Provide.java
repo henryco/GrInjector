@@ -17,7 +17,7 @@ public @interface Provide {
 	/**
 	 * Name of provided component
 	 */
-	String value();
+	String value() default "";
 
 	final class Helper {
 
