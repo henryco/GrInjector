@@ -6,10 +6,7 @@ import net.henryco.injector.meta.Provide;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created 12/15/2017
@@ -53,9 +50,6 @@ public final class ModuleStruct {
 		// TODO
 	}
 
-	public <T> T findOrInstance(String name) {
-		return findOrInstance(name, new ModuleStruct(this));
-	}
 
 
 	@Override
@@ -66,17 +60,77 @@ public final class ModuleStruct {
 
 
 	@SuppressWarnings("unchecked")
-	private static <T> T findInSingletons(String name, ModuleStruct struct) {
+	public <T> T findOrInstance(String name, Class<?> type) {
 
-		System.out.println("\nSearch in singletons ");
+		Object o = findOrInstanceByName(name, new ModuleStruct(this));
+		if (o != null) return (T) o;
+
+		return findInSingletonsByType(type, new ModuleStruct(this));
+	}
+
+
+
+
+
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T findOrInstanceByType(Class<?> type, ModuleStruct struct) {
+
+		T o = findInSingletonsByType(type, struct);
+		if (o != null) return o;
+
+		T byMethod = findInMethodsByType(type, struct);
+		if (byMethod != null) return byMethod;
+
+		T nested = findInNestedByType(type, struct);
+		if (nested != null) return nested;
+
+		return null;
+	}
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T findOrInstanceByName(String name, ModuleStruct struct) {
+
+		T o = findInSingletonsByName(name, struct);
+		if (o != null) return o;
+
+		T byMethod = findInMethodsByName(name, struct);
+		if (byMethod != null) return byMethod;
+
+		T nested = findInNestedByName(name, struct);
+		if (nested != null) return nested;
+
+		return null;
+	}
+
+
+	private static <T> T findInNestedByName(String name, ModuleStruct struct) {
+
 		for (ModuleStruct moduleStruct : struct.included) {
+			T o = findOrInstanceByName(name, moduleStruct);
+			if (o != null) return o;
+		}
+		return null;
+	}
 
-			System.out.println("Module: " + moduleStruct.module.getSimpleName() + ".class");
+	private static <T> T findInNestedByType(Class<?> type, ModuleStruct struct) {
+
+		for (ModuleStruct moduleStruct : struct.included) {
+			T o = findOrInstanceByType(type, moduleStruct);
+			if (o != null) return o;
+		}
+		return null;
+	}
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T findInSingletonsByName(String name, ModuleStruct struct) {
+
+		for (ModuleStruct moduleStruct : struct.included) {
 			Object o = moduleStruct.singletons.get(name);
-			if (o != null) {
-				System.out.println("Return\n");
-				return (T) moduleStruct.singletons.get(name);
-			}
+			if (o != null) return (T) moduleStruct.singletons.get(name);
 		}
 		return null;
 	}
@@ -84,11 +138,38 @@ public final class ModuleStruct {
 
 
 	@SuppressWarnings("unchecked")
-	private static <T> T findOrInstance(String name, ModuleStruct struct) {
+	private static <T> T findInSingletonsByType(Class<?> type, ModuleStruct struct) {
+		if (type == null) return null;
+
+		for (ModuleStruct moduleStruct : struct.included) {
+			Collection<Object> values = moduleStruct.singletons.values();
+			for (Object value : values) {
+				if (type.getClass().isInstance(value))
+					return (T) value;
+			}
+		}
+		return null;
+	}
 
 
-		Object o = findInSingletons(name, struct);
-		if (o != null) return (T) o;
+
+	private static <T> T findInMethodsByName(String name, ModuleStruct struct) {
+		return findInMethods(name, null, struct);
+	}
+
+
+	private static <T> T findInMethodsByType(Class<?> type, ModuleStruct struct) {
+		return findInMethods(null, type, struct);
+	}
+
+
+	private static <T> T findInMethods(String name, Class<?> type, ModuleStruct struct) {
+
+		if ((name != null && type != null))
+			throw new RuntimeException("Cannot find by NAME and TYPE in the same time!");
+		if (name == null && type == null)
+			throw new RuntimeException("NAME and TYPE cannot be NULL in the same time!");
+
 
 		for (ModuleStruct moduleStruct : struct.included) {
 
@@ -99,55 +180,64 @@ public final class ModuleStruct {
 				if (provide == null)
 					continue;
 
-
-
-				String compName = provide.value();
-				if (compName.trim().isEmpty() || !compName.trim().equals(name))
-					continue;
-
-
-				if (method.getParameterCount() == 0) {
-					try {
-						return (T) method.invoke(moduleStruct.module.newInstance());
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				if (name == null) {
+					Class<?> returnType = method.getReturnType();
+					if (!returnType.equals(type))
+						continue;
 				}
 
-
-				Parameter[] parameters = method.getParameters();
-				Object[] args = new Object[parameters.length];
-
-				for (int i = 0; i < args.length; i++) {
-					Parameter param = parameters[i];
-
-					Inject inject = param.getAnnotation(Inject.class);
-					if (inject != null && !inject.value().trim().isEmpty()) {
-						args[i] = findOrInstance(inject.value(), struct);
-					}
-
+				if (type == null) {
+					String compName = provide.value();
+					if (compName.trim().isEmpty() || !compName.trim().equals(name))
+						continue;
 				}
 
 				try {
-					return (T) method.invoke(moduleStruct.module.newInstance(), args);
-				} catch (Exception e) {
+					T dependency = instanceDependencyFromMethod(moduleStruct.module.newInstance(), struct, method);
+					if (dependency != null)
+						return dependency;
+				} catch (InstantiationException | IllegalAccessException e) {
 					e.printStackTrace();
 				}
-
-			}
-		}
-
-		for (ModuleStruct moduleStruct : struct.included) {
-
-			Object o1 = findOrInstance(name, moduleStruct);
-			if (o1 != null) {
-				return (T) o1;
 			}
 		}
 
 		return null;
 	}
 
+
+
+	@SuppressWarnings("unchecked")
+	private static <T> T instanceDependencyFromMethod
+			(Object moduleInstance, ModuleStruct struct, Method method) {
+
+		if (method.getParameterCount() == 0) try {
+			return (T) method.invoke(moduleInstance);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		Parameter[] parameters = method.getParameters();
+		Object[] args = new Object[parameters.length];
+
+		for (int i = 0; i < args.length; i++) {
+			Parameter param = parameters[i];
+
+			Inject inject = param.getAnnotation(Inject.class);
+			if (inject != null && !inject.value().trim().isEmpty())
+				args[i] = findOrInstanceByName(inject.value(), struct);
+			else
+				args[i] = findOrInstanceByType(param.getType(), struct);
+		}
+
+		try {
+			return (T) method.invoke(moduleInstance, args);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 
 
 }
