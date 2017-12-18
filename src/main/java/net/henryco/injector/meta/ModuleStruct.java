@@ -30,11 +30,12 @@ public final class ModuleStruct {
 		this.components = new HashSet<>();
 		this.singletons = new HashMap<>();
 
-		addIncluded(ma);
 		addComponents(ma);
 		addComponentsFromPackage(ma);
 		addTargets(ma);
 		addTargetsFromPackage(ma);
+		addIncluded(ma);
+
 		processSingletons();
 	}
 
@@ -71,8 +72,12 @@ public final class ModuleStruct {
 
 
 	private void addIncluded(Module m) {
-		for (Class<?> icl : m.include())
-			included.add(new ModuleStruct(icl));
+		for (Class<?> icl : m.include()) {
+			ModuleStruct struct = new ModuleStruct(icl);
+			components.addAll(struct.components);
+			targets.addAll(struct.targets);
+			included.add(struct);
+		}
 	}
 
 
