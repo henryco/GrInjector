@@ -59,15 +59,13 @@ public final class ModuleStruct {
 
 	public boolean inject(Object target, String ... components) {
 		if (!targets.contains(target.getClass())) return false;
-
-		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), components);
+		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), (Object[]) components);
 		return true;
 	}
 
 	public boolean inject(Object target, Class<?> ... components) {
 		if (!targets.contains(target.getClass())) return false;
-
-		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), components);
+		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), (Object[]) components);
 		return true;
 	}
 
