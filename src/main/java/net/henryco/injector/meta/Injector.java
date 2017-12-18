@@ -225,12 +225,15 @@ public final class Injector {
 		try {
 			instance = (T) constructor.newInstance(arguments);
 		} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
 			throw new RuntimeException("Cannot instance via constructor", e);
+		} catch (IllegalArgumentException ex) {
+			throw new RuntimeException("Cannot instance via constructor," +
+											   " check providable dependencies", ex);
 		}
 
 		return injectDependenciesToInstance(instance, struct);
 	}
+
 
 
 	public static <T> T injectDependenciesToInstance(T instance,
@@ -301,10 +304,12 @@ public final class Injector {
 				continue;
 			}
 
-			if (inject.value().trim().isEmpty())
+			if (inject.value().trim().isEmpty()) {
 				fieldValues[i] = findOrInstanceByType(fields[i].getType(), struct);
-			else
+			}
+			else {
 				fieldValues[i] = findOrInstanceByName(inject.value(), struct);
+			}
 		}
 
 		return fieldValues;

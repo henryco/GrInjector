@@ -50,6 +50,13 @@ public final class ModuleStruct {
 	}
 
 
+	public boolean inject(Object target) {
+		if (!targets.contains(target.getClass())) return false;
+
+		Injector.injectDependenciesToInstance(target, new ModuleStruct(this));
+		return true;
+	}
+
 	public boolean inject(Object target, String ... components) {
 		if (!targets.contains(target.getClass())) return false;
 
@@ -92,6 +99,10 @@ public final class ModuleStruct {
 	private void addTarget(Class<?> target) {
 
 		TargetInterface tia = target.getDeclaredAnnotation(TargetInterface.class);
+		Module a = target.getDeclaredAnnotation(Module.class);
+		Component b = target.getDeclaredAnnotation(Component.class);
+		if (a != null || b != null) return;
+
 		if (tia == null) {
 			this.targets.add(target);
 			return;

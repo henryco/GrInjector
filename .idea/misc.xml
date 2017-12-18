@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="EntryPointsManager">
-    <list size="3">
-      <item index="0" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Inject" />
-      <item index="1" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Module" />
-      <item index="2" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Provide" />
+    <list size="4">
+      <item index="0" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Component" />
+      <item index="1" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Inject" />
+      <item index="2" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Module" />
+      <item index="3" class="java.lang.String" itemvalue="net.henryco.injector.meta.annotations.Provide" />
     </list>
     <writeAnnotations>
       <writeAnnotation name="net.henryco.injector.meta.annotations.Inject" />
