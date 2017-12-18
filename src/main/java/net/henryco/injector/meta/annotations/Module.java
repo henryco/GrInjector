@@ -13,6 +13,11 @@ import java.lang.annotation.*;
 public @interface Module {
 
 	Class<?>[] include() default {};
+
+	Class<?>[] targets() default {};
+	Class<?>[] targetsRootClass() default {};
+	String[] targetsRootPath() default {};
+
 	Class<?>[] components() default {};
 	Class<?>[] componentsRootClass() default {};
 	String[] componentsRootPath() default {};

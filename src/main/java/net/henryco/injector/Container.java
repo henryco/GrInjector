@@ -14,22 +14,15 @@ public class Container {
 
 
 	/*package*/ final Set<ModuleStruct> modules;
-	/*package*/ final Set<Class<?>> targets;
-
 
 	Container() {
 		modules = new HashSet<>();
-		targets = new HashSet<>();
 	}
-
 
 	void addModules(Class<?> ... modules) {
 		for (Class<?> module : modules)
 			this.modules.add(new ModuleStruct(module));
 	}
 
-	void addTargets(Class<?> ... targets) {
-		this.targets.addAll(Arrays.asList(targets));
-	}
 
 }

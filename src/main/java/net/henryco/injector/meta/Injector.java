@@ -229,8 +229,16 @@ public final class Injector {
 			throw new RuntimeException("Cannot instance via constructor", e);
 		}
 
-		Field[] fields = component.getDeclaredFields();
-		Object[] fieldValues = instanceDependencyFields(fields, component, struct);
+		return injectDependenciesToInstance(instance, struct);
+	}
+
+
+	public static <T> T injectDependenciesToInstance(T instance,
+													 ModuleStruct struct,
+													 Object ... componentsToInject) {
+
+		Field[] fields = instance.getClass().getDeclaredFields();
+		Object[] fieldValues = instanceDependencyFields(fields, instance.getClass(), struct, componentsToInject);
 		for (int i = 0; i < fields.length; i++) {
 			if (fieldValues[i] == NULL) continue;
 			Helper.setValue(fields[i], instance, fieldValues[i]);
@@ -238,7 +246,6 @@ public final class Injector {
 
 		return instance;
 	}
-
 
 
 	@SuppressWarnings("unchecked")
@@ -264,7 +271,10 @@ public final class Injector {
 	}
 
 
-	private static Object[] instanceDependencyFields(Field[] fields, Class<?> instance, ModuleStruct struct) {
+	private static Object[] instanceDependencyFields(Field[] fields,
+													 Class<?> instance,
+													 ModuleStruct struct,
+													 Object ... componentsToInject) {
 
 		Object[] fieldValues = new Object[fields.length];
 		for (int i = 0; i < fields.length; i++) {
@@ -284,6 +294,11 @@ public final class Injector {
 					fieldValues[i] = NULL;
 					continue;
 				}
+			}
+
+			if (!containsComponent(inject, fields[i], componentsToInject)) {
+				fieldValues[i] = NULL;
+				continue;
 			}
 
 			if (inject.value().trim().isEmpty())
@@ -320,5 +335,22 @@ public final class Injector {
 			throw new RuntimeException("NAME and TYPE cannot be NULL in the same time!");
 	}
 
+
+	private static boolean containsComponent(Inject inject, Field field, Object[] componentsToInject) {
+
+		if (componentsToInject.length == 0) return true;
+
+		for (Object cti : componentsToInject) {
+			if (cti instanceof String) {
+				boolean b = cti.equals(inject.value()) || cti.equals(field.getName());
+				if (b) return true;
+
+			} else if (cti instanceof Class<?>) {
+				boolean b = Helper.checkType((Class<?>) cti, field.getType());
+				if (b) return true;
+			}
+		}
+		return false;
+	}
 
 }

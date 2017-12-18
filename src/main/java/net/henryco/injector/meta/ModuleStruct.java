@@ -16,6 +16,7 @@ public final class ModuleStruct {
 	/*package*/ final Map<String, Object> singletons;
 	/*package*/ final Set<ModuleStruct> included;
 	/*package*/ final Set<Class<?>> components;
+	/*package*/ final Set<Class<?>> targets;
 
 	public ModuleStruct(Class<?> module) {
 
@@ -24,6 +25,7 @@ public final class ModuleStruct {
 			throw new RuntimeException("Module " + module.getName() + " must be annotated as @Module");
 
 		this.module = module;
+		this.targets = new HashSet<>();
 		this.included = new HashSet<>();
 		this.components = new HashSet<>();
 		this.singletons = new HashMap<>();
@@ -31,17 +33,35 @@ public final class ModuleStruct {
 		addIncluded(ma);
 		addComponents(ma);
 		addComponentsFromPackage(ma);
+		addTargets(ma);
+		addTargetsFromPackage(ma);
 		processSingletons();
 	}
 
 
 	public ModuleStruct(ModuleStruct other) {
 		this.module = null;
+		this.targets = new HashSet<>();
 		this.singletons = new HashMap<>();
 		this.components = new HashSet<>();
 		this.included = new HashSet<ModuleStruct>() {{
 			add(other);
 		}};
+	}
+
+
+	public boolean inject(Object target, String ... components) {
+		if (!targets.contains(target.getClass())) return false;
+
+		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), components);
+		return true;
+	}
+
+	public boolean inject(Object target, Class<?> ... components) {
+		if (!targets.contains(target.getClass())) return false;
+
+		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), components);
+		return true;
 	}
 
 
@@ -62,12 +82,61 @@ public final class ModuleStruct {
 
 	private void addComponentsFromPackage(Module m) {
 		for (String path : m.componentsRootPath())
-			processPackagePath(path);
+			processComponentPackagePath(path);
 		for (Class<?> cClass : m.componentsRootClass())
-			processPackagePath(cClass.getPackage().getName());
+			processComponentPackagePath(cClass.getPackage().getName());
 	}
 
-	private void processPackagePath(String path) {
+
+
+	private void addTarget(Class<?> target) {
+
+		TargetInterface tia = target.getDeclaredAnnotation(TargetInterface.class);
+		if (tia == null) {
+			this.targets.add(target);
+			return;
+		}
+
+		if (!target.isInterface())
+			throw new RuntimeException("@TargetInterface annotation acceptable only for interfaces");
+
+		for (Method method : target.getDeclaredMethods()) {
+			if (method.getDeclaredAnnotation(Inject.class) == null)
+				continue;
+			if (method.getParameterCount() != 1)
+				throw new RuntimeException("Injection target method must contain only one argument");
+			this.targets.add(method.getParameters()[0].getType());
+		}
+	}
+
+
+	private void addTargets(Module m) {
+		for (Class<?> target : m.targets())
+			addTarget(target);
+	}
+
+	private void addTargetsFromPackage(Module m) {
+		for (String path : m.targetsRootPath())
+			processTargetPackagePath(path);
+		for (Class<?> aClass : m.targetsRootClass())
+			processTargetPackagePath(aClass.getPackage().getName());
+	}
+
+
+	private void processTargetPackagePath(String path) {
+
+		try {
+			ArrayList<Class<?>> classes = ClassFinder.getClassesForPackage(path);
+			for (Class<?> target : classes) {
+				addTarget(target);
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+	private void processComponentPackagePath(String path) {
 
 		try {
 			ArrayList<Class<?>> classes = ClassFinder.getClassesForPackage(path);
@@ -108,7 +177,6 @@ public final class ModuleStruct {
 			singletons.put(name, instance);
 		}
 	}
-
 
 
 	@Override
