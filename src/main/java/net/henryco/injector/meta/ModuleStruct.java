@@ -10,6 +10,7 @@ import java.util.*;
  *
  * @author Henry
  */
+@SuppressWarnings("WeakerAccess")
 public final class ModuleStruct {
 
 	/*package*/ final Class<?> module;
