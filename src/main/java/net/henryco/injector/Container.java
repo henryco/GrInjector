@@ -10,7 +10,7 @@ import java.util.*;
  *
  * @author Henry
  */
-public class Container {
+public final class Container {
 
 
 	/*package*/ final Set<ModuleStruct> modules;

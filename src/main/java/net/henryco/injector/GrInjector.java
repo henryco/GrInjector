@@ -18,6 +18,7 @@ public final class GrInjector {
 			boolean inject = module.inject(dest);
 			if (inject) return;
 		}
+		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
 	private void injectToTarget(Object dest, String... components) {
@@ -26,6 +27,7 @@ public final class GrInjector {
 			boolean inject = module.inject(dest, components);
 			if (inject) return;
 		}
+		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
 	private void injectToTarget(Object dest, Class<?>... components) {
@@ -33,6 +35,7 @@ public final class GrInjector {
 			boolean inject = module.inject(dest, components);
 			if (inject) return;
 		}
+		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
 	private void addRootModules(Class<?>... rootModules) {
