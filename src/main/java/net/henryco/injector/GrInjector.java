@@ -38,12 +38,29 @@ public final class GrInjector {
 		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
+	private <T> T getComponentByName(String name) {
+		for (ModuleStruct module : container.modules) {
+			T t = module.findOrInstanceByName(name);
+			if (t != null) return t;
+		}
+		return null;
+	}
+
+	private <T> T getComponentByType(Class<T> type) {
+		for (ModuleStruct module : container.modules) {
+			T t = module.findOrInstanceByType(type);
+			if (t != null) return t;
+		}
+		return null;
+	}
+
 	private void addRootModules(Class<?>... rootModules) {
 		container.addModules(rootModules);
 	}
 
-
-
+	private void resetModules() {
+		container.reset();
+	}
 
 
 	public static void inject(Object dest) {
@@ -60,5 +77,17 @@ public final class GrInjector {
 
 	public static void addModules(Class<?> ... rootModules) {
 		ourInstance.addRootModules(rootModules);
+	}
+
+	public static <T> T getComponent(String name) {
+		return ourInstance.getComponentByName(name);
+	}
+
+	public static <T> T getComponent(Class<T> cmpClass) {
+		return ourInstance.getComponentByType(cmpClass);
+	}
+
+	public static void reset() {
+		ourInstance.resetModules();
 	}
 }

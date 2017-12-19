@@ -1,5 +1,6 @@
 package net.henryco.injector.injector;
 
+import net.henryco.injector.GrInjector;
 import net.henryco.injector.injector.component.ComponentB;
 import net.henryco.injector.injector.component.ComponentD;
 import net.henryco.injector.injector.module.ModuleA;
@@ -36,5 +37,24 @@ public class InjectorTest {
 		ComponentB componentB2 = Injector.findOrInstanceByName("SomeComponent", new ModuleStruct(moduleStruct));
 		assert componentB2 != null;
 		assert componentB2.toString().equals(valid);
+	}
+
+
+	@Test
+	public void getComponentHiLvlTest() {
+
+		GrInjector.addModules(ModuleA.class);
+		String valid = "ComponentB{someLong=-20, someFloat=100.0, someString='Strange string', otherString='BANG'}";
+		ComponentB component = GrInjector.getComponent("SomeComponent");
+
+		assert component != null;
+		assert component.toString().equals(valid);
+
+		GrInjector.reset();
+		GrInjector.addModules(ModuleA.class);
+
+		ComponentB component2 = GrInjector.getComponent(ComponentB.class);
+		assert component2 != null;
+		assert component2.toString().equals(valid);
 	}
 }

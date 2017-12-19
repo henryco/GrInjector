@@ -1,7 +1,6 @@
 package net.henryco.injector;
 
 import net.henryco.injector.meta.ModuleStruct;
-import net.henryco.injector.meta.annotations.Component;
 
 import java.util.*;
 
@@ -20,9 +19,15 @@ public final class Container {
 	}
 
 	void addModules(Class<?> ... modules) {
-		for (Class<?> module : modules)
+		for (Class<?> module : modules) {
+			if (this.modules.stream().anyMatch(m -> m.getModule().getName().equals(module.getName())))
+				continue;
 			this.modules.add(new ModuleStruct(module));
+		}
 	}
 
+	void reset() {
+		modules.clear();
+	}
 
 }

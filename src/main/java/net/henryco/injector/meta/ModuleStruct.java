@@ -2,11 +2,12 @@ package net.henryco.injector.meta;
 
 import net.henryco.injector.meta.annotations.*;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
  * Created 12/15/2017
+ *
  * @author Henry
  */
 @SuppressWarnings("WeakerAccess")
@@ -50,24 +51,46 @@ public final class ModuleStruct {
 		}};
 	}
 
+	public Class<?> getModule() {
+		return module;
+	}
 
 	public boolean inject(Object target) {
 		if (!targets.contains(target.getClass())) return false;
-
 		Injector.injectDependenciesToInstance(target, new ModuleStruct(this));
 		return true;
 	}
 
-	public boolean inject(Object target, String ... components) {
+
+	public boolean inject(Object target, String... components) {
 		if (!targets.contains(target.getClass())) return false;
 		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), (Object[]) components);
 		return true;
 	}
 
-	public boolean inject(Object target, Class<?> ... components) {
+
+	public boolean inject(Object target, Class<?>... components) {
 		if (!targets.contains(target.getClass())) return false;
 		Injector.injectDependenciesToInstance(target, new ModuleStruct(this), (Object[]) components);
 		return true;
+	}
+
+
+	public <T> T findOrInstanceByName(String name) {
+		return Injector.findOrInstanceByName(name, new ModuleStruct(this));
+	}
+
+
+	public <T> T findOrInstanceByType(Class<?> type) {
+		return Injector.findOrInstanceByType(type, new ModuleStruct(this));
+	}
+
+
+	private <T> T findOrInstance(String name, Class<?> type) {
+		T o = Injector.findOrInstanceByName(name, new ModuleStruct(this));
+		if (o != null)
+			return o;
+		return Injector.findOrInstanceByType(type, new ModuleStruct(this));
 	}
 
 
@@ -88,13 +111,13 @@ public final class ModuleStruct {
 		}
 	}
 
+
 	private void addComponentsFromPackage(Module m) {
 		for (String path : m.componentsRootPath())
 			processComponentPackagePath(path);
 		for (Class<?> cClass : m.componentsRootClass())
 			processComponentPackagePath(cClass.getPackage().getName());
 	}
-
 
 
 	private void addTarget(Class<?> target) {
@@ -126,6 +149,7 @@ public final class ModuleStruct {
 		for (Class<?> target : m.targets())
 			addTarget(target);
 	}
+
 
 	private void addTargetsFromPackage(Module m) {
 		for (String path : m.targetsRootPath())
@@ -197,17 +221,5 @@ public final class ModuleStruct {
 	public String toString() {
 		return module == null ? "ROOT_MODULE" : (module.getSimpleName() + ".class");
 	}
-
-
-
-	@SuppressWarnings("unchecked")
-	private <T> T findOrInstance(String name, Class<?> type) {
-
-		Object o = Injector.findOrInstanceByName(name, new ModuleStruct(this));
-		if (o != null) return (T) o;
-
-		return Injector.findOrInstanceByType(type, new ModuleStruct(this));
-	}
-
 
 }
