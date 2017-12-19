@@ -75,7 +75,6 @@ public final class ModuleStruct {
 	private void addIncluded(Module m) {
 		for (Class<?> icl : m.include()) {
 			ModuleStruct struct = new ModuleStruct(icl);
-			components.addAll(struct.components);
 			targets.addAll(struct.targets);
 			included.add(struct);
 		}
