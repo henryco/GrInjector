@@ -3,6 +3,7 @@ package net.henryco.injector.meta;
 import net.henryco.injector.meta.annotations.Component;
 import net.henryco.injector.meta.annotations.Inject;
 import net.henryco.injector.meta.annotations.Provide;
+import net.henryco.injector.meta.annotations.Singleton;
 
 import java.lang.reflect.*;
 import java.util.Collection;
@@ -88,7 +89,16 @@ public final class Injector {
 						continue;
 				}
 
-				return instanceDependencyFromConstructor(component, struct);
+				T dependency = instanceDependencyFromConstructor(component, struct);
+				if (dependency != null) {
+					if (component.getDeclaredAnnotation(Singleton.class) != null) {
+						String svName = ca.value().isEmpty() ? component.getSimpleName() : ca.value();
+						moduleStruct.singletons.put(svName, dependency);
+					}
+					return dependency;
+				}
+
+				return null;
 			}
 		}
 
@@ -183,8 +193,13 @@ public final class Injector {
 
 				try {
 					T dependency = instanceDependencyFromMethod(moduleStruct.module.newInstance(), struct, method);
-					if (dependency != null)
+					if (dependency != null) {
+						if (method.getDeclaredAnnotation(Singleton.class) != null) {
+							String svName = provide.value().isEmpty() ? method.getName() : provide.value();
+							moduleStruct.singletons.put(svName, dependency);
+						}
 						return dependency;
+					}
 				} catch (InstantiationException | IllegalAccessException e) {
 					e.printStackTrace();
 				}
@@ -252,8 +267,9 @@ public final class Injector {
 
 
 	@SuppressWarnings("unchecked")
-	private static <T> T instanceDependencyFromMethod
-			(Object moduleInstance, ModuleStruct struct, Method method) {
+	private static <T> T instanceDependencyFromMethod(Object moduleInstance,
+													  ModuleStruct struct,
+													  Method method) {
 
 		if (method.getParameterCount() == 0) try {
 			return (T) method.invoke(moduleInstance);
