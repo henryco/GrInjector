@@ -175,6 +175,7 @@ public final class ModuleStruct {
 			if (provide == null) continue;
 			String name = provide.value().isEmpty() ? method.getName() : provide.value();
 
+			if (singletons.containsKey(name)) continue;
 			Object instance = findOrInstance(name, method.getReturnType());
 			singletons.put(name, instance);
 		}
@@ -186,6 +187,7 @@ public final class ModuleStruct {
 			if (c == null) continue;
 			String name = c.value().isEmpty() ? component.getSimpleName() : c.value();
 
+			if (singletons.containsKey(name)) continue;
 			Object instance = findOrInstance(name, component);
 			singletons.put(name, instance);
 		}
