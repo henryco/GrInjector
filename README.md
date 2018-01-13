@@ -1,4 +1,4 @@
-# GrInjector <br> [![GitHub license](https://img.shields.io/badge/license-MIT-yellow.svg)](https://raw.githubusercontent.com/henryco/GrInjector/master/LICENSE) [![Maven Central](https://img.shields.io/maven-central/v/com.github.henryco/grinjector.svg)](http://repo1.maven.org/maven2/com/github/henryco/grinjector/)
+# GrInjector <br> [![Maven Central](https://img.shields.io/maven-central/v/com.github.henryco/grinjector.svg)](http://repo1.maven.org/maven2/com/github/henryco/grinjector/) [![GitHub license](https://img.shields.io/badge/license-MIT-yellow.svg)](https://raw.githubusercontent.com/henryco/GrInjector/master/LICENSE) 
 ###### Lightweight reflective dependency injector for java and Android.
 ###### <a href="https://github.com/henryco/GrInjector/wiki/GrInjector-guide.">**Wiki page**</a>
 
