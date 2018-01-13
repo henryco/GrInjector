@@ -63,14 +63,25 @@ public final class GrInjector {
 	}
 
 
+	/**
+	 * @param dest instance inject to
+	 */
 	public static void inject(Object dest) {
 		ourInstance.injectToTarget(dest);
 	}
 
+	/**
+	 * @param dest instance inject to
+	 * @param components desired components names
+	 */
 	public static void inject(Object dest, String ... components) {
 		ourInstance.injectToTarget(dest, components);
 	}
 
+	/**
+	 * @param dest instance inject to
+	 * @param components desired components types
+	 */
 	public static void inject(Object dest, Class<?> ... components) {
 		ourInstance.injectToTarget(dest, components);
 	}
@@ -87,6 +98,9 @@ public final class GrInjector {
 		return ourInstance.getComponentByType(cmpClass);
 	}
 
+	/**
+	 * Reset all modules with dependencies
+	 */
 	public static void reset() {
 		ourInstance.resetModules();
 	}
