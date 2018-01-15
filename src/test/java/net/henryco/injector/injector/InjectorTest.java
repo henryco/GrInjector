@@ -6,6 +6,8 @@ import net.henryco.injector.injector.component.ComponentD;
 import net.henryco.injector.injector.module.ModuleA;
 import net.henryco.injector.meta.Injector;
 import net.henryco.injector.meta.ModuleStruct;
+import net.henryco.injector.meta.annotations.Inject;
+import net.henryco.injector.meta.annotations.Module;
 import org.junit.Test;
 
 /**
