@@ -20,8 +20,7 @@ import com.github.henryco.injector.meta.annotations.Singleton;
 		ComponentGA.class
 }, targetsRootClass = {
 		SomeControllerA.class
-})
-public class ModuleGA {
+}) public class ModuleGA {
 
 
 	@Provide("some_text")

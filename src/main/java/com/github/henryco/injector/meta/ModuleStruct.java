@@ -13,6 +13,8 @@ import java.util.*;
 @SuppressWarnings("WeakerAccess")
 public final class ModuleStruct {
 
+	private static final Map<String, ModuleStruct> structMap = new HashMap<>();
+
 	/*package*/ final Class<?> module;
 	/*package*/ final Map<String, Object> singletons;
 	/*package*/ final Set<ModuleStruct> included;
@@ -38,6 +40,8 @@ public final class ModuleStruct {
 		addIncluded(ma);
 
 		processSingletons();
+
+		structMap.put(module.getName(), this);
 	}
 
 
@@ -96,7 +100,10 @@ public final class ModuleStruct {
 
 	private void addIncluded(Module m) {
 		for (Class<?> icl : m.include()) {
-			ModuleStruct struct = new ModuleStruct(icl);
+			ModuleStruct struct;
+			if (!structMap.containsKey(icl.getName()))
+				struct = new ModuleStruct(icl);
+			else struct = structMap.get(icl.getName());
 			included.add(struct);
 		}
 	}
