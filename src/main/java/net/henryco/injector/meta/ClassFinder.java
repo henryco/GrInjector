@@ -33,7 +33,7 @@ public final class ClassFinder {
 	 *            Class object.
 	 * @param classes
 	 *            if a file isn't loaded but still is in the directory
-	 * @throws ClassNotFoundException
+	 * @throws ClassNotFoundException exception
 	 */
 	private static void checkDirectory(File directory, String pckgname,
 									   ArrayList<Class<?>> classes) throws ClassNotFoundException {
@@ -42,7 +42,7 @@ public final class ClassFinder {
 		if (directory.exists() && directory.isDirectory()) {
 			final String[] files = directory.list();
 
-			for (final String file : files) {
+			for (final String file : files != null ? files : new String[0]) {
 				if (file.endsWith(".class")) {
 					try {
 						classes.add(Class.forName(pckgname + '.'
@@ -81,7 +81,7 @@ public final class ClassFinder {
 		final Enumeration<JarEntry> entries = jarFile.entries();
 		String name;
 
-		for (JarEntry jarEntry = null; entries.hasMoreElements()
+		for (JarEntry jarEntry; entries.hasMoreElements()
 				&& ((jarEntry = entries.nextElement()) != null);) {
 			name = jarEntry.getName();
 
@@ -120,7 +120,7 @@ public final class ClassFinder {
 					.replace('.', '/'));
 			URLConnection connection;
 
-			for (URL url = null; resources.hasMoreElements()
+			for (URL url; resources.hasMoreElements()
 					&& ((url = resources.nextElement()) != null);) {
 				try {
 					connection = url.openConnection();
