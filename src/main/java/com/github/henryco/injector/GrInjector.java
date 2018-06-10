@@ -1,6 +1,9 @@
 package com.github.henryco.injector;
 
 import com.github.henryco.injector.meta.ModuleStruct;
+import com.github.henryco.injector.meta.resolver.IClassFinder;
+
+import java.util.Arrays;
 
 public final class GrInjector {
 
@@ -21,6 +24,7 @@ public final class GrInjector {
 		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
+	@SuppressWarnings("Duplicates")
 	private void injectToTarget(Object dest, String... components) {
 
 		for (ModuleStruct module : container.modules) {
@@ -30,6 +34,7 @@ public final class GrInjector {
 		throw new RuntimeException("There are no dependencies to inject " + dest.getClass());
 	}
 
+	@SuppressWarnings("Duplicates")
 	private void injectToTarget(Object dest, Class<?>... components) {
 		for (ModuleStruct module : container.modules) {
 			boolean inject = module.inject(dest, components);
@@ -54,13 +59,14 @@ public final class GrInjector {
 		return null;
 	}
 
-	private void addRootModules(Class<?>... rootModules) {
-		container.addModules(rootModules);
+	private void addRootModules(IClassFinder classFinder, Class<?>... rootModules) {
+		container.addModules(classFinder, rootModules);
 	}
 
 	private void resetModules() {
 		container.reset();
 	}
+
 
 
 	/**
@@ -86,9 +92,15 @@ public final class GrInjector {
 		ourInstance.injectToTarget(dest, components);
 	}
 
+
 	public static void addModules(Class<?> ... rootModules) {
-		ourInstance.addRootModules(rootModules);
+		addModules(null, rootModules);
 	}
+
+	public static void addModules(IClassFinder classFinder, Class<?> ... rootModules) {
+		ourInstance.addRootModules(classFinder, rootModules);
+	}
+
 
 	public static <T> T getComponent(String name) {
 		return ourInstance.getComponentByName(name);

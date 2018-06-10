@@ -1,12 +1,15 @@
 package com.github.henryco.injector.injector.component;
 
-import com.github.henryco.injector.meta.annotations.Component;
-import com.github.henryco.injector.meta.annotations.Inject;
+
+import com.github.henryco.injector.meta.annotations.Provide;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * @author Henry on 17/12/17.
  */
-@Component("SomeComponent")
+@Provide("SomeComponent")
 public class ComponentB {
 
 	private final Long someLong;
@@ -23,8 +26,8 @@ public class ComponentB {
 		this.someFloat = someFloat;
 	}
 
-	@Inject("strange")
-	public void setSomeString(String someString) {
+	@Inject
+	public void setSomeString(@Named("strange") String someString) {
 		this.someString = someString;
 	}
 

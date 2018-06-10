@@ -1,17 +1,20 @@
 package com.github.henryco.injector.meta;
 
-import com.github.henryco.injector.meta.annotations.Component;
-import com.github.henryco.injector.meta.annotations.Inject;
-import com.github.henryco.injector.meta.annotations.Provide;
-import com.github.henryco.injector.meta.annotations.Singleton;
+import com.github.henryco.injector.meta.annotations.*;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.lang.reflect.*;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * @author Henry on 17/12/17.
  */
 public final class Injector {
+
+	private static final Logger logger = Logger.getLogger(Inject.class.getName());
 
 	private static final class NULL_MARKER {
 		private static final NULL_MARKER instance = new NULL_MARKER();
@@ -76,7 +79,7 @@ public final class Injector {
 		for (ModuleStruct moduleStruct : struct.included) {
 			for (Class<?> component : moduleStruct.components) {
 
-				Component ca = component.getDeclaredAnnotation(Component.class);
+				Provide ca = component.getDeclaredAnnotation(Provide.class);
 
 				if (name != null) {
 					String compName = ca.value();
@@ -233,7 +236,7 @@ public final class Injector {
 			constructor = constructors[0];
 
 		Parameter[] parameters = constructor.getParameters();
-		Object[] arguments = instanceDependencyArguments(parameters, struct);
+		Object[] arguments = instanceDependencyArguments(parameters, struct, component);
 
 		T instance;
 
@@ -251,18 +254,18 @@ public final class Injector {
 
 
 
-	public static <T> T injectDependenciesToInstance(T instance,
+	/* package */ static <T> T injectDependenciesToInstance(T instance,
 													 ModuleStruct struct,
 													 Object ... componentsToInject) {
-
 		Field[] fields = instance.getClass().getDeclaredFields();
 		Object[] fieldValues = instanceDependencyFields(fields, instance.getClass(), struct, componentsToInject);
 		for (int i = 0; i < fields.length; i++) {
 			if (fieldValues[i] == NULL) continue;
-			Helper.setValue(fields[i], instance, fieldValues[i]);
-		}
 
-		return instance;
+			if (fieldValues[i] != null)
+				Helper.setValue(fields[i], instance, fieldValues[i]);
+		}
+		return instanceDependencyMethods(instance, struct, componentsToInject);
 	}
 
 
@@ -278,7 +281,7 @@ public final class Injector {
 		}
 
 		Parameter[] parameters = method.getParameters();
-		Object[] args = instanceDependencyArguments(parameters, struct);
+		Object[] args = instanceDependencyArguments(parameters, struct, method);
 
 		try {
 			return (T) method.invoke(moduleInstance, args);
@@ -289,42 +292,62 @@ public final class Injector {
 		return null;
 	}
 
+	private static <T> T instanceDependencyMethods(T instance,
+												   ModuleStruct struct,
+												   Object ... componentsToInject) {
+		for (Method method : instance.getClass().getDeclaredMethods()) {
+
+			Inject inject = method.getDeclaredAnnotation(Inject.class);
+
+			if (inject == null) continue;
+
+			method.setAccessible(true);
+
+			Parameter[] parameters = method.getParameters();
+			Object[] args = instanceDependencyArguments(parameters, struct, componentsToInject, componentsToInject);
+			if (args == null) continue;
+
+			try {
+				method.invoke(instance, args);
+			} catch (IllegalAccessException | InvocationTargetException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Injection to method: " + method.getName() + " FAIL;"
+						+ " " + instance + ", " + struct);
+			}
+		}
+		return instance;
+	}
 
 	private static Object[] instanceDependencyFields(Field[] fields,
 													 Class<?> instance,
 													 ModuleStruct struct,
 													 Object ... componentsToInject) {
-
 		Object[] fieldValues = new Object[fields.length];
 		for (int i = 0; i < fields.length; i++) {
 
 			Inject inject = fields[i].getDeclaredAnnotation(Inject.class);
 			if (inject == null) {
 
-				try {
-					String setterName = Helper.createSetterName(fields[i].getName());
-					Method declaredMethod = instance.getDeclaredMethod(setterName, fields[i].getType());
-					inject = declaredMethod.getDeclaredAnnotation(Inject.class);
-				} catch (NoSuchMethodException e) {
-					inject = null;
-				}
-
-				if (inject == null) {
-					fieldValues[i] = NULL;
-					continue;
-				}
-			}
-
-			if (!containsComponent(inject, fields[i], componentsToInject)) {
 				fieldValues[i] = NULL;
 				continue;
 			}
 
-			if (inject.value().trim().isEmpty()) {
-				fieldValues[i] = findOrInstanceByType(fields[i].getType(), struct);
+			Named named = fields[i].getDeclaredAnnotation(Named.class);
+			if (!containsComponent(named, fields[i], componentsToInject)) {
+				fieldValues[i] = NULL;
+				continue;
+			}
+
+			if (named != null && !named.value().trim().isEmpty()) {
+				fieldValues[i] = findOrInstanceByName(named.value(), struct);
 			}
 			else {
-				fieldValues[i] = findOrInstanceByName(inject.value(), struct);
+				fieldValues[i] = findOrInstanceByType(fields[i].getType(), struct);
+			}
+
+			if (fieldValues[i] == null) {
+				logger.warning("Cannot resolve dependency or dependency == null, "
+						+ instance + ", " + fields[i].getName() + ", " + fields[i].getType());
 			}
 		}
 
@@ -332,17 +355,30 @@ public final class Injector {
 	}
 
 
-	private static Object[] instanceDependencyArguments(Parameter[] parameters, ModuleStruct struct) {
+	private static Object[] instanceDependencyArguments(Parameter[] parameters,
+														ModuleStruct struct,
+														Object optionalInfo,
+														Object ... componentsToInject) {
 
 		Object[] args = new Object[parameters.length];
 		for (int i = 0; i < args.length; i++) {
 			Parameter param = parameters[i];
 
-			Inject inject = param.getDeclaredAnnotation(Inject.class);
-			if (inject != null && !inject.value().trim().isEmpty())
-				args[i] = findOrInstanceByName(inject.value(), struct);
+			Named named = param.getDeclaredAnnotation(Named.class);
+			if (componentsToInject != null && componentsToInject.length != 0) {
+				if (!containsComponent(named, param, componentsToInject))
+					return null;
+			}
+
+			if (named != null && !named.value().trim().isEmpty())
+				args[i] = findOrInstanceByName(named.value(), struct);
 			else
 				args[i] = findOrInstanceByType(param.getType(), struct);
+
+			if (args[i] == null) {
+				logger.warning("Cannot resolve dependency or dependency == null, "
+						+ optionalInfo + ", " + param.getName() + ", " + param.getType());
+			}
 		}
 
 		return args;
@@ -356,16 +392,32 @@ public final class Injector {
 			throw new RuntimeException("NAME and TYPE cannot be NULL in the same time!");
 	}
 
-
-	private static boolean containsComponent(Inject inject, Field field, Object[] componentsToInject) {
+	private static boolean containsComponent(Named named, Parameter parameter, Object[] componentsToInject) {
 
 		if (componentsToInject.length == 0) return true;
 
 		for (Object cti : componentsToInject) {
 			if (cti instanceof String) {
-				boolean b = cti.equals(inject.value()) || cti.equals(field.getName());
+				boolean b = named != null && cti.equals(named.value());
 				if (b) return true;
+			} else if (cti instanceof Class<?>) {
+				boolean b = Helper.checkType((Class<?>) cti, parameter.getType());
+				if (b) return true;
+			}
+		}
+		return false;
+	}
 
+	private static boolean containsComponent(Named named, Field field, Object[] componentsToInject) {
+
+		if (componentsToInject.length == 0) return true;
+
+		for (Object cti : componentsToInject) {
+			if (cti instanceof String) {
+				boolean b = (named != null && cti.equals(named.value()) ||
+						cti.equals(field.getName())
+				);
+				if (b) return true;
 			} else if (cti instanceof Class<?>) {
 				boolean b = Helper.checkType((Class<?>) cti, field.getType());
 				if (b) return true;

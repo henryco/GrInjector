@@ -3,7 +3,9 @@ package com.github.henryco.injector.general;
 import com.github.henryco.injector.GrInjector;
 import com.github.henryco.injector.general.component.ComponentGA;
 import com.github.henryco.injector.general.component.NotAnnotatedComponentB;
-import com.github.henryco.injector.meta.annotations.Inject;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * Created 12/18/2017
@@ -22,8 +24,8 @@ public class SomeControllerB {
 
 	private NotAnnotatedComponentB componentB;
 
-	@Inject("prv_com_b")
-	public void setComponentB(NotAnnotatedComponentB componentB) {
+	@Inject
+	public void setComponentB(@Named("prv_com_b") NotAnnotatedComponentB componentB) {
 		this.componentB = componentB;
 	}
 
@@ -53,5 +55,13 @@ public class SomeControllerB {
 		assert componentGA == null;
 		assert componentB != null;
 		assert componentB.toString().equals(VALID_NAC_B_STRING);
+	}
+
+	@Override
+	public String toString() {
+		return "SomeControllerB{" +
+				"componentGA=" + componentGA +
+				", componentB=" + componentB +
+				'}';
 	}
 }

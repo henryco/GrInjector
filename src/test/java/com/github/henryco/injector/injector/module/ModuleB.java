@@ -4,7 +4,8 @@ import com.github.henryco.injector.injector.component.ComponentB;
 import com.github.henryco.injector.injector.component.ComponentC;
 import com.github.henryco.injector.meta.annotations.Module;
 import com.github.henryco.injector.meta.annotations.Provide;
-import com.github.henryco.injector.meta.annotations.Singleton;
+
+import javax.inject.Singleton;
 
 /**
  * @author Henry on 17/12/17.

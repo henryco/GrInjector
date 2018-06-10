@@ -64,6 +64,7 @@ public final class Helper {
 
 		String name = createSetterName(field.getName());
 		try {
+
 			Method setter = instance.getClass().getDeclaredMethod(name, value.getClass());
 			setter.invoke(instance, value);
 		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {

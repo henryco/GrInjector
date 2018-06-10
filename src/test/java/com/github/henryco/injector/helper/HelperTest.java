@@ -4,8 +4,8 @@ import com.github.henryco.injector.injector.component.ComponentA;
 import com.github.henryco.injector.injector.component.ComponentB;
 import com.github.henryco.injector.injector.component.ComponentC;
 import com.github.henryco.injector.injector.component.ComponentD;
-import com.github.henryco.injector.meta.ClassFinder;
 import com.github.henryco.injector.meta.Helper;
+import com.github.henryco.injector.meta.resolver.DefaultClassFinder;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -71,7 +71,7 @@ public class HelperTest {
 	@Test
 	public void packageClassFinderTest() throws ClassNotFoundException {
 		String name = ComponentA.class.getPackage().getName();
-		ArrayList<Class<?>> list = ClassFinder.getClassesForPackage(name);
+		ArrayList<Class<?>> list = new DefaultClassFinder().getClassesForPackage(name);
 		assert list.contains(ComponentA.class);
 		assert list.contains(ComponentB.class);
 		assert list.contains(ComponentC.class);

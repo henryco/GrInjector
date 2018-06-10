@@ -1,14 +1,16 @@
 package com.github.henryco.injector.general.component;
 
-import com.github.henryco.injector.meta.annotations.Component;
-import com.github.henryco.injector.meta.annotations.Inject;
+
+import com.github.henryco.injector.meta.annotations.Provide;
+
+import javax.inject.Inject;
 
 /**
  * Created 12/18/2017
  *
  * @author Henry
  */
-@Component("component_gb")
+@Provide("component_gb")
 public class ComponentGB implements IComponent {
 
 	private final String textToSay;

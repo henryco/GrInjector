@@ -3,9 +3,10 @@ package com.github.henryco.injector.general;
 import com.github.henryco.injector.GrInjector;
 import com.github.henryco.injector.general.component.IComponent;
 import com.github.henryco.injector.general.component.NotAnnotatedComponentA;
-import com.github.henryco.injector.meta.annotations.Inject;
 import javafx.fxml.Initializable;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -21,11 +22,15 @@ public class SomeControllerA implements Initializable{
 	private static final String VALID_NOT_ANN_COMPONENT_A_STRING =
 			"NotAnnotatedComponentA{array=[1, 2, 3, 4], intList=[7, 8, 9, 10]}";
 
-	@Inject("ComponentGA")
+	@Inject
+	@Named("ComponentGA")
 	private IComponent component;
 
 	@Inject
 	private NotAnnotatedComponentA componentA;
+
+	@Inject
+	private System system;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {

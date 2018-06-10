@@ -6,6 +6,7 @@ import com.github.henryco.injector.injector.component.ComponentD;
 import com.github.henryco.injector.injector.module.ModuleA;
 import com.github.henryco.injector.meta.Injector;
 import com.github.henryco.injector.meta.ModuleStruct;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -48,7 +49,7 @@ public class InjectorTest {
 		ComponentB component = GrInjector.getComponent("SomeComponent");
 
 		assert component != null;
-		assert component.toString().equals(valid);
+		Assert.assertEquals(valid, component.toString());
 
 		GrInjector.reset();
 		GrInjector.addModules(ModuleA.class);

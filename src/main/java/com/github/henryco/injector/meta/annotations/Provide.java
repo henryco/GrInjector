@@ -4,6 +4,7 @@ import java.lang.annotation.*;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 
 /**
  * Created 12/15/2017
@@ -11,7 +12,7 @@ import static java.lang.annotation.ElementType.METHOD;
  * @author Henry
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Documented @Target({METHOD, ANNOTATION_TYPE})
+@Documented @Target({METHOD, ANNOTATION_TYPE, TYPE})
 public @interface Provide {
 
 	/**

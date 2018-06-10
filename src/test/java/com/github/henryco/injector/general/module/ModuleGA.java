@@ -2,11 +2,13 @@ package com.github.henryco.injector.general.module;
 
 import com.github.henryco.injector.general.SomeControllerA;
 import com.github.henryco.injector.general.component.ComponentGA;
+import com.github.henryco.injector.general.component.ComponentGB;
 import com.github.henryco.injector.general.component.NotAnnotatedComponentB;
-import com.github.henryco.injector.meta.annotations.Inject;
 import com.github.henryco.injector.meta.annotations.Module;
 import com.github.henryco.injector.meta.annotations.Provide;
-import com.github.henryco.injector.meta.annotations.Singleton;
+
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Created 12/18/2017
@@ -20,6 +22,8 @@ import com.github.henryco.injector.meta.annotations.Singleton;
 		ComponentGA.class
 }, targetsRootClass = {
 		SomeControllerA.class
+}, components = {
+		ComponentGB.class
 }) public class ModuleGA {
 
 
@@ -36,7 +40,7 @@ import com.github.henryco.injector.meta.annotations.Singleton;
 
 
 	@Provide("prv_com_b") @Singleton
-	public NotAnnotatedComponentB provide(String someText, @Inject("float_val") Float someFloat) {
+	public NotAnnotatedComponentB provide(String someText, @Named("float_val") Float someFloat) {
 		return new NotAnnotatedComponentB(someText, someFloat.intValue(), someFloat);
 	}
 

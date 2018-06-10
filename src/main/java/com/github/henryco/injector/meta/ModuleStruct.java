@@ -1,7 +1,11 @@
 package com.github.henryco.injector.meta;
 
 import com.github.henryco.injector.meta.annotations.*;
+import com.github.henryco.injector.meta.resolver.DefaultClassFinder;
+import com.github.henryco.injector.meta.resolver.IClassFinder;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -15,17 +19,20 @@ public final class ModuleStruct {
 
 	private static final Map<String, ModuleStruct> structMap = new HashMap<>();
 
+	/*package*/ final IClassFinder classFinder;
 	/*package*/ final Class<?> module;
 	/*package*/ final Map<String, Object> singletons;
 	/*package*/ final Set<ModuleStruct> included;
 	/*package*/ final Set<Class<?>> components;
 	/*package*/ final Set<Class<?>> targets;
 
-	public ModuleStruct(Class<?> module) {
+	public ModuleStruct(Class<?> module, IClassFinder classFinder) {
 
 		Module ma = module.getDeclaredAnnotation(Module.class);
 		if (ma == null)
 			throw new RuntimeException("Module " + module.getName() + " must be annotated as @Module");
+
+		this.classFinder = classFinder == null ? new DefaultClassFinder() : classFinder;
 
 		this.module = module;
 		this.targets = new HashSet<>();
@@ -37,13 +44,16 @@ public final class ModuleStruct {
 		addComponentsFromPackage(ma);
 		addTargets(ma);
 		addTargetsFromPackage(ma);
-		addIncluded(ma);
+		addIncluded(ma, classFinder);
 
 		processSingletons();
 
 		structMap.put(module.getName(), this);
 	}
 
+	public ModuleStruct(Class<?> module) {
+		this(module, null);
+	}
 
 	public ModuleStruct(ModuleStruct other) {
 		this.module = null;
@@ -53,6 +63,7 @@ public final class ModuleStruct {
 		this.included = new HashSet<ModuleStruct>() {{
 			add(other);
 		}};
+		this.classFinder = other.classFinder;
 	}
 
 	public Class<?> getModule() {
@@ -98,11 +109,11 @@ public final class ModuleStruct {
 	}
 
 
-	private void addIncluded(Module m) {
+	private void addIncluded(Module m, IClassFinder classFinder) {
 		for (Class<?> icl : m.include()) {
 			ModuleStruct struct;
 			if (!structMap.containsKey(icl.getName()))
-				struct = new ModuleStruct(icl);
+				struct = new ModuleStruct(icl, classFinder);
 			else struct = structMap.get(icl.getName());
 			included.add(struct);
 		}
@@ -110,9 +121,8 @@ public final class ModuleStruct {
 
 
 	private void addComponents(Module m) {
-
 		for (Class<?> component : m.components()) {
-			Component c = component.getDeclaredAnnotation(Component.class);
+			Provide c = component.getDeclaredAnnotation(Provide.class);
 			if (c == null) throw new RuntimeException("Component must be annotated as @Component");
 			components.add(component);
 		}
@@ -131,7 +141,7 @@ public final class ModuleStruct {
 
 		TargetInterface tia = target.getDeclaredAnnotation(TargetInterface.class);
 		Module a = target.getDeclaredAnnotation(Module.class);
-		Component b = target.getDeclaredAnnotation(Component.class);
+		Provide b = target.getDeclaredAnnotation(Provide.class);
 		if (a != null || b != null) return;
 
 		if (tia == null) {
@@ -169,7 +179,7 @@ public final class ModuleStruct {
 	private void processTargetPackagePath(String path) {
 
 		try {
-			ArrayList<Class<?>> classes = ClassFinder.getClassesForPackage(path);
+			List<Class<?>> classes = classFinder.getClassesForPackage(path);
 			for (Class<?> target : classes) {
 				addTarget(target);
 			}
@@ -182,9 +192,10 @@ public final class ModuleStruct {
 	private void processComponentPackagePath(String path) {
 
 		try {
-			ArrayList<Class<?>> classes = ClassFinder.getClassesForPackage(path);
+
+			List<Class<?>> classes = classFinder.getClassesForPackage(path);
 			for (Class<?> component : classes) {
-				Component c = component.getDeclaredAnnotation(Component.class);
+				Provide c = component.getDeclaredAnnotation(Provide.class);
 				if (c == null) continue;
 				components.add(component);
 			}
@@ -213,7 +224,7 @@ public final class ModuleStruct {
 		for (Class<?> component : components) {
 			if (component.getDeclaredAnnotation(Singleton.class) == null) continue;
 
-			Component c = component.getDeclaredAnnotation(Component.class);
+			Provide c = component.getDeclaredAnnotation(Provide.class);
 			if (c == null) continue;
 			String name = c.value().isEmpty() ? component.getSimpleName() : c.value();
 

@@ -1,7 +1,7 @@
 package com.github.henryco.injector.general.component;
 
-import com.github.henryco.injector.meta.annotations.Inject;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 
