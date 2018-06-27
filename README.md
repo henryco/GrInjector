@@ -10,14 +10,14 @@ You need to add maven central repository into your project and then add dependen
   
 **Gradle**  
 ```Groovy
-    compile 'com.github.henryco:grinjector:1.2.0'
+    compile 'com.github.henryco:grinjector:1.2.1'
 ```  
 **Maven**  
 ```XML
     <dependency>
         <groupId>com.github.henryco</groupId>
         <artifactId>grinjector</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.1</version>
     </dependency>
 ```
 
