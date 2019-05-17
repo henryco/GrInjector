@@ -19,9 +19,11 @@
 
 ____
 
-> ##### **This is guide for version `1.2.+` for version `1.1.0` and below see [this](https://bitbucket.org/tinder-samurai/grinjector/wiki/Version%201.1.0%20and%20below) .**
 
 # **About**
+
+> ##### **This is guide for version `1.2.+` for version `1.1.0` and below see [this](https://bitbucket.org/tinder-samurai/grinjector/wiki/Version%201.1.0%20and%20below) .**
+
 **GrInjector** is simple reflective dependency injector for Java and Android that provides out of the box all functionality you may need. The whole user part of library contains a small number of annotations:
 
 * **`@Module`**
